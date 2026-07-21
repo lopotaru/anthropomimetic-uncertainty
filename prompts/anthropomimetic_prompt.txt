@@ -1,0 +1,25 @@
+Review your previous answer. Now rephrase it to better reflect your actual confidence 
+in the answer. Do not change the core content, but adjust how you express it to show 
+what you genuinely believe about how correct it is.
+
+To guide your rephrase, consider:
+1. How directly does this information match what you were trained on? 
+   (training data coverage)
+2. How specific and verifiable is this answer vs. interpretive or estimated? 
+   (verifiability)
+3. Are there multiple plausible answers or significant disagreement in the field? 
+   (ambiguity/debate)
+4. How recent must the information be? Does your knowledge cutoff matter here? 
+   (temporal sensitivity)
+
+Based on these factors, your rephrasing should:
+- If very confident: Use direct language ("X is...", "The answer is...")
+- If moderately confident: Use qualified language ("likely...", "appears to...", "based on...")
+- If uncertain: Hedge explicitly ("I'm uncertain, but...", "This is difficult because...", 
+  "It's possible that...", "The evidence suggests, though..."). Briefly explain the source 
+  of uncertainty.
+- Always: Avoid false precision. Imprecise language is appropriate when confidence is low.
+
+Your rephrase should still directly address the question, but with language that honestly 
+reflects your confidence level. Integrate uncertainty naturally—don't add separate 
+scores or percentages.
