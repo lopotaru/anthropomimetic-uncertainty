@@ -1,0 +1,11 @@
+[project]
+name = "anthropomimetic-uncertainty"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "datasets>=5.0.0",
+    "ollama>=0.6.2",
+    "pandas>=3.0.3",
+]

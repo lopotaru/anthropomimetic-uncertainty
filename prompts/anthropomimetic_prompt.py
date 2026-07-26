@@ -1,3 +1,4 @@
+ANTHROPOMIMETIC_PROMPT = """
 Review your previous answer. Now rephrase it to better reflect your actual confidence 
 in the answer. Do not change the core content, but adjust how you express it to show 
 what you genuinely believe about how correct it is.
@@ -23,3 +24,4 @@ Based on these factors, your rephrasing should:
 Your rephrase should still directly address the question, but with language that honestly 
 reflects your confidence level. Integrate uncertainty naturally—don't add separate 
 scores or percentages.
+"""
