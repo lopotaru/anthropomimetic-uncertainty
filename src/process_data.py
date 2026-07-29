@@ -3,15 +3,31 @@ from datasets import load_dataset
 from ollama import Client
 
 from prompts.anthropomimetic_prompt import ANTHROPOMIMETIC_PROMPT
+from prompts.system_prompt import SYSTEM_PROMPT
+
+MAX_TOKENS = 200
 
 
-def prompt_model_same_session(session_prompt: list[dict]) -> str:
+def prompt_model_same_session(
+    session_prompt: list[dict], max_tokens: int = MAX_TOKENS
+) -> str:
     client = Client()
-    response = client.chat("smollm2:135m", messages=session_prompt, stream=False)
+    response = client.chat(
+        "smollm2:135m",
+        messages=session_prompt,
+        stream=False,
+        options={"num_predict": max_tokens},
+        think=False,
+    )
     return response["message"]["content"]
 
 
-def send_prompt(batch: list[dict], output_file: str, first_batch: bool = False):
+def send_prompt(
+    batch: list[dict],
+    output_file: str,
+    first_batch: bool = False,
+    max_tokens: int = MAX_TOKENS,
+):
 
     results = []
 
@@ -22,19 +38,21 @@ def send_prompt(batch: list[dict], output_file: str, first_batch: bool = False):
         # initiate session message
         session_messages = []
 
+        session_messages.append({"role": "system", "content": SYSTEM_PROMPT})
+
         # ask question
         session_messages.append(
             {"role": "user", "content": f"Answer the following question: {question}"}
         )
 
-        initial_answer = prompt_model_same_session(session_messages)
+        initial_answer = prompt_model_same_session(session_messages, max_tokens)
 
         session_messages.append({"role": "assistant", "content": initial_answer})
 
         # anthropomimetic prompting
         session_messages.append({"role": "user", "content": ANTHROPOMIMETIC_PROMPT})
 
-        rephrased_answer = prompt_model_same_session(session_messages)
+        rephrased_answer = prompt_model_same_session(session_messages, max_tokens)
 
         question_result = {
             "question_id": question_id,
@@ -57,7 +75,12 @@ def send_prompt(batch: list[dict], output_file: str, first_batch: bool = False):
 
 
 def get_and_send_prompts_in_batches(
-    name_dataset: str, config: str, split: str, batch_size: int, output_file: str
+    name_dataset: str,
+    config: str,
+    split: str,
+    batch_size: int,
+    output_file: str,
+    max_tokens: int = MAX_TOKENS,
 ) -> list[dict]:
     question_dictionary = {}
     dataset = load_dataset(name_dataset, config)
@@ -75,9 +98,9 @@ def get_and_send_prompts_in_batches(
 
         if len(batch) == batch_size:
             if batch_number == 0:
-                send_prompt(batch, output_file, True)
+                send_prompt(batch, output_file, True, max_tokens)
             else:
-                send_prompt(batch, output_file, False)
+                send_prompt(batch, output_file, False, max_tokens)
 
             batch = []
             batch_number += 1
