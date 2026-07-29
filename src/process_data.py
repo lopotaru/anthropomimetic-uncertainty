@@ -5,17 +5,9 @@ from ollama import Client
 from prompts.anthropomimetic_prompt import ANTHROPOMIMETIC_PROMPT
 
 
-def prompt_model_same_session(prompt: str) -> str:
+def prompt_model_same_session(session_prompt: list[dict]) -> str:
     client = Client()
-
-    messages = [
-        {
-            "role": "user",
-            "content": prompt,
-        },
-    ]
-
-    response = client.chat("smollm2:135m", messages=messages, stream=False)
+    response = client.chat("smollm2:135m", messages=session_prompt, stream=False)
     return response["message"]["content"]
 
 
@@ -37,6 +29,8 @@ def send_prompt(batch: list[dict], output_file: str, first_batch: bool = False):
 
         initial_answer = prompt_model_same_session(session_messages)
 
+        session_messages.append({"role": "assistant", "content": initial_answer})
+
         # anthropomimetic prompting
         session_messages.append({"role": "user", "content": ANTHROPOMIMETIC_PROMPT})
 
@@ -51,15 +45,15 @@ def send_prompt(batch: list[dict], output_file: str, first_batch: bool = False):
 
         results.append(question_result)
 
-        # save batch results
-        if output_file:
-            df = pd.DataFrame(results)
-            if first_batch:
-                df.to_csv(output_file, mode="w", index=False)
-            else:
-                df.to_csv(output_file, mode="a", header=False, index=False)
+    # save batch results
+    if output_file:
+        df = pd.DataFrame(results)
+        if first_batch:
+            df.to_csv(output_file, mode="w", index=False)
+        else:
+            df.to_csv(output_file, mode="a", header=False, index=False)
 
-        return results
+    return results
 
 
 def get_and_send_prompts_in_batches(
@@ -93,3 +87,9 @@ def get_and_send_prompts_in_batches(
             send_prompt(batch, output_file, True)
         else:
             send_prompt(batch, output_file, False)
+
+
+if __name__ == "__main__":
+    get_and_send_prompts_in_batches(
+        "mandarjoshi/trivia_qa", "rc.wikipedia.nocontext", "train", 10, "results"
+    )
