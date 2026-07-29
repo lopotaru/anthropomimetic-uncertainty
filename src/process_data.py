@@ -63,13 +63,14 @@ def send_prompt(batch: list[dict], output_file: str, first_batch: bool = False):
 
 
 def get_and_send_prompts_in_batches(
-    name_dataset: str, config: str, split: str, batch_size: int
+    name_dataset: str, config: str, split: str, batch_size: int, output_file: str
 ) -> list[dict]:
     question_dictionary = {}
     dataset = load_dataset(name_dataset, config)
     split_data = dataset[split]
 
     batch = []
+    batch_number = 0
 
     for _, question in enumerate(split_data):
         question_dictionary = {
@@ -79,12 +80,16 @@ def get_and_send_prompts_in_batches(
         batch.append(question_dictionary)
 
         if len(batch) == batch_size:
-            send_prompt(batch)
+            if batch_number == 0:
+                send_prompt(batch, output_file, True)
+            else:
+                send_prompt(batch, output_file, False)
 
+            batch = []
+            batch_number += 1
 
-def save_prompt(output_file: str, prompts: list[dict]):
-
-    df = pd.DataFrame(prompts)
-    df.to_csv(output_file, index=False)
-
-    return df
+    if batch:
+        if batch_number == 0:
+            send_prompt(batch, output_file, True)
+        else:
+            send_prompt(batch, output_file, False)
