@@ -5,7 +5,7 @@ from ollama import Client
 from prompts.anthropomimetic_prompt import ANTHROPOMIMETIC_PROMPT
 from prompts.system_prompt import SYSTEM_PROMPT
 
-MAX_TOKENS = 200
+MAX_TOKENS = 100
 
 
 def prompt_model_same_session(
