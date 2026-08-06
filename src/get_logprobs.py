@@ -92,12 +92,16 @@ def save_logprobs(input_file: str, output_file: str, batch_size: int):
 
         if len(batch) == batch_size:
             if current_batch_number == 0:
-                get_logprobs_in_batches(batch, True, "logprobs_results")
+                get_logprobs_in_batches(batch, True, output_file)
             else:
-                get_logprobs_in_batches(batch, False, "logprobs_results")
+                get_logprobs_in_batches(batch, False, output_file)
 
     if batch:
         if current_batch_number == 0:
-            get_logprobs_in_batches(batch, True, "logprobs_results")
+            get_logprobs_in_batches(batch, True, output_file)
         else:
-            get_logprobs_in_batches(batch, False, "logprobs_results")
+            get_logprobs_in_batches(batch, False, output_file)
+
+
+if __name__ == "__main__":
+    save_logprobs("results.csv", "logprobs_results.csv", 10)
