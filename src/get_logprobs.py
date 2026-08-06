@@ -1,6 +1,7 @@
 from typing import Iterable
 
 import ollama
+import pandas as pd
 from ollama import Client
 
 """
@@ -36,9 +37,44 @@ def generate_logprobs(answer: str, question_id: str) -> dict[list]:
         avg_logprob = 0.0
         total_logprob = 0.0
 
-    return {
+    logprobs_results = {
         "logprobs_data": logprobs,
         "avg_logprob": avg_logprob,
         "total_logprob": total_logprob,
         "num_tokens": len(logprobs),
     }
+
+    return logprobs_results
+
+
+def get_logprobs_in_batches(batch: list, first_batch: bool, output_file: str):
+
+    batch_results = []
+
+    for question_index, question_line in batch:
+        question_id = question_line["question_id"]
+
+        initial_answer_logprobs = generate_logprobs(question_line["initial_answer"])
+
+        rephrased_answer_logprobs = generate_logprobs(question_line["rephrased_answer"])
+
+        question_results = dict(question_line)
+        question_results.update(
+            {
+                "initial_avg_logprob": initial_answer_logprobs["avg_logprob"],
+                "initial_total_logprob": initial_answer_logprobs["total_logprob"],
+                "initial_num_tokens": initial_answer_logprobs["num_tokens"],
+                "rephrased_avg_logprob": rephrased_answer_logprobs["avg_logprob"],
+                "rephrased_logprob": rephrased_answer_logprobs["total_logprob"],
+                "rephrased_num_tokens": rephrased_answer_logprobs["num_tokens"],
+            }
+        )
+
+        batch_results.append(question_results)
+
+        if batch_results:
+            data = pd.DataFrame(batch_results)
+        if first_batch:
+            data.to_csv(output_file, mode="w", index=False)
+        else:
+            data.to_csv(output_file, mode="a", header=False, index=False)
