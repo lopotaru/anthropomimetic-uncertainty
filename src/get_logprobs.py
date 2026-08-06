@@ -78,3 +78,26 @@ def get_logprobs_in_batches(batch: list, first_batch: bool, output_file: str):
             data.to_csv(output_file, mode="w", index=False)
         else:
             data.to_csv(output_file, mode="a", header=False, index=False)
+
+
+def save_logprobs(input_file: str, output_file: str, batch_size: int):
+    input_data = pd.read_csv(input_file)
+    batch = []
+    current_batch_number = 0
+
+    input_data_dictionary = input_data.to_dict("records")
+
+    for question_row in input_data_dictionary:
+        batch.append(question_row)
+
+        if len(batch) == batch_size:
+            if current_batch_number == 0:
+                get_logprobs_in_batches(batch, True, "logprobs_results")
+            else:
+                get_logprobs_in_batches(batch, False, "logprobs_results")
+
+    if batch:
+        if current_batch_number == 0:
+            get_logprobs_in_batches(batch, True, "logprobs_results")
+        else:
+            get_logprobs_in_batches(batch, False, "logprobs_results")
