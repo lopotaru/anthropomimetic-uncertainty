@@ -17,12 +17,12 @@ def print_logprobs(logprobs: Iterable[dict], label: str) -> None:
 """
 
 
-def generate_logprobs(answer: str, question_id: str) -> dict[list]:
+def generate_logprobs(answer: str) -> dict:
 
     client = Client()
 
     response = ollama.generate(
-        model="gemma3",
+        model="smollm2:135m",
         prompt=answer,
         logprobs=True,
         top_logprobs=3,
@@ -51,7 +51,7 @@ def get_logprobs_in_batches(batch: list, first_batch: bool, output_file: str):
 
     batch_results = []
 
-    for question_index, question_line in batch:
+    for question_line in batch:
         question_id = question_line["question_id"]
 
         initial_answer_logprobs = generate_logprobs(question_line["initial_answer"])
@@ -61,6 +61,7 @@ def get_logprobs_in_batches(batch: list, first_batch: bool, output_file: str):
         question_results = dict(question_line)
         question_results.update(
             {
+                "question_id": question_id,
                 "initial_avg_logprob": initial_answer_logprobs["avg_logprob"],
                 "initial_total_logprob": initial_answer_logprobs["total_logprob"],
                 "initial_num_tokens": initial_answer_logprobs["num_tokens"],
@@ -72,12 +73,12 @@ def get_logprobs_in_batches(batch: list, first_batch: bool, output_file: str):
 
         batch_results.append(question_results)
 
-        if batch_results:
-            data = pd.DataFrame(batch_results)
-        if first_batch:
-            data.to_csv(output_file, mode="w", index=False)
-        else:
-            data.to_csv(output_file, mode="a", header=False, index=False)
+    if batch_results:
+        data = pd.DataFrame(batch_results)
+    if first_batch:
+        data.to_csv(output_file, mode="w", index=False)
+    else:
+        data.to_csv(output_file, mode="a", header=False, index=False)
 
 
 def save_logprobs(input_file: str, output_file: str, batch_size: int):
@@ -95,6 +96,7 @@ def save_logprobs(input_file: str, output_file: str, batch_size: int):
                 get_logprobs_in_batches(batch, True, output_file)
             else:
                 get_logprobs_in_batches(batch, False, output_file)
+            current_batch_number += 1
 
     if batch:
         if current_batch_number == 0:

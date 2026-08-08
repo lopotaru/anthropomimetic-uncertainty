@@ -114,5 +114,5 @@ def get_and_send_prompts_in_batches(
 
 if __name__ == "__main__":
     get_and_send_prompts_in_batches(
-        "mandarjoshi/trivia_qa", "rc.wikipedia.nocontext", "train", 10, "results"
+        "mandarjoshi/trivia_qa", "rc.wikipedia.nocontext", "train", 10, "results.csv"
     )

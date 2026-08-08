@@ -1,9 +1,17 @@
 ANTHROPOMIMETIC_PROMPT = """
+Rephrase your answer to match your actual confidence level.
+
+Adjust your language to show your actual confidence level.
+
+Keep it brief. One sentence if possible.
+"""
+
+SECOND_ANTHROPOMIMETIC_PROMPT = """
 Rephrase this answer to represent uncertainty in a natural language.
 """
 
 
-INITIAL_ANTHROPOMIMETIC_PROMPT = """
+FISRT_ANTHROPOMIMETIC_PROMPT = """
 Review your previous answer. Now rephrase it to better reflect your actual confidence 
 in the answer. Do not change the core content, but adjust how you express it to show 
 what you genuinely believe about how correct it is.
