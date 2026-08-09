@@ -3,10 +3,10 @@ from datasets import load_dataset
 from ollama import Client
 
 from get_logprobs import generate_logprobs, get_confidence_from_logprobs
-from prompts.anthropomimetic_prompt import ANTHROPOMIMETIC_PROMPT
 from prompts.system_prompt import SYSTEM_PROMPT
 
 MAX_TOKENS = 50
+USED_MODEL = "gemma3:1b"
 
 
 def prompt_model_same_session(
@@ -14,13 +14,29 @@ def prompt_model_same_session(
 ) -> str:
     client = Client()
     response = client.chat(
-        "gemma3:1b",
+        USED_MODEL,
         messages=session_prompt,
         stream=False,
         options={"num_predict": max_tokens},
         think=False,
     )
     return response["message"]["content"]
+
+
+def measure_perceived_confidence(question: str, answer: str):
+    client = Client()
+    prompt = f""" Question: {question}
+    Answer: {answer}
+
+    Based on the used language, what confidence level does this answer express (0 - 100)?
+    Respond with only a number."""
+
+    response = client.chat(USED_MODEL, messages=prompt, stream=False)
+
+    try:
+        return float(response.get("response", "").strip())
+    except:
+        return 50.0
 
 
 def send_prompt(
@@ -48,24 +64,43 @@ def send_prompt(
 
         initial_answer = prompt_model_same_session(session_messages, max_tokens)
 
+        # get perceived confidence for initial answer
+        initial_perceived_confidence = measure_perceived_confidence(
+            question, initial_answer
+        )
+
         # get logprobs
         logprobs_answer = generate_logprobs(initial_answer)
+
+        # get confidence percentage
         confidence_answer = get_confidence_from_logprobs(logprobs_answer)
 
-        ANTHROPOMIMETIC_PROMPT = f"The model was {confidence_answer} confident in the answer. Rephrase this answer in 1-2 sentences to reflect this confidence level in natural language. Do not use the actual the actual percentage in your answer."
+        ANTHROPOMIMETIC_PROMPT = f"""
+        The model was {confidence_answer} confident in the answer. 
+        Rephrase this answer in 1-2 sentences to reflect this confidence level 
+        in natural language. Do not use the actual the actual percentage in 
+        your answer."""
 
         session_messages.append({"role": "assistant", "content": initial_answer})
 
         # anthropomimetic prompting
         session_messages.append({"role": "user", "content": ANTHROPOMIMETIC_PROMPT})
 
+        # ask to rephrase question based on confidence
         rephrased_answer = prompt_model_same_session(session_messages, max_tokens)
+
+        # get perceived confidence for rephrased answer
+        rephrased_perceived_confidence = measure_perceived_confidence(
+            question, rephrased_answer
+        )
 
         question_result = {
             "question_id": question_id,
             "question": question,
             "initial_answer": initial_answer,
+            "initial_perceived_confidence": initial_perceived_confidence,
             "rephrased_answer": rephrased_answer,
+            "rephrased_perceived_confidence": rephrased_perceived_confidence,
         }
 
         results.append(question_result)
