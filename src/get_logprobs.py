@@ -5,17 +5,7 @@ import ollama
 import pandas as pd
 from ollama import Client
 
-"""
-def print_logprobs(logprobs: Iterable[dict], label: str) -> None:
-    print(f"\n{label}:")
-    for entry in logprobs:
-        token = entry.get("token", "")
-        logprob = entry.get("logprob")
-        print(f"  token={token!r:<12} logprob={logprob:.3f}")
-        for alt in entry.get("top_logprobs", []):
-            if alt["token"] != token:
-                print(f"    alt -> {alt['token']!r:<12} ({alt['logprob']:.3f})")
-"""
+USED_MODEL = "smollm2:135m"
 
 
 def generate_logprobs(answer: str) -> dict:
@@ -23,7 +13,7 @@ def generate_logprobs(answer: str) -> dict:
     client = Client()
 
     response = ollama.generate(
-        model="gemma3:1b",
+        model=USED_MODEL,
         prompt=answer,
         logprobs=True,
         top_logprobs=3,
@@ -113,7 +103,7 @@ def get_confidence_from_logprobs(logprobs: list[dict]) -> float:
     entropy = (-1) * np.sum(
         normalised_probabilities * np.log(normalised_probabilities + 0.00001)
     )
-    max_entropy = np.log(len(entropy))
+    max_entropy = np.log(len(normalised_probabilities))
 
     if max_entropy > 0:
         normalised_entropy = float(entropy / max_entropy)

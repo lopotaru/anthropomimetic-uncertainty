@@ -31,7 +31,9 @@ def measure_perceived_confidence(question: str, answer: str):
     Based on the used language, what confidence level does this answer express (0 - 100)?
     Respond with only a number."""
 
-    response = client.chat(USED_MODEL, messages=prompt, stream=False)
+    response = client.chat(
+        USED_MODEL, messages=[{"role": "user", "content": prompt}], stream=False
+    )
 
     try:
         return float(response.get("response", "").strip())
@@ -70,7 +72,8 @@ def send_prompt(
         )
 
         # get logprobs
-        logprobs_answer = generate_logprobs(initial_answer)
+        logprobs_dictionary = generate_logprobs(initial_answer)
+        logprobs_answer = logprobs_dictionary["logprobs_data"]
 
         # get confidence percentage
         confidence_answer = get_confidence_from_logprobs(logprobs_answer)
