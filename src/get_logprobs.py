@@ -5,7 +5,7 @@ import ollama
 import pandas as pd
 from ollama import Client
 
-USED_MODEL = "smollm2:135m"
+USED_MODEL = "gemma3:1b"
 
 
 def generate_logprobs(answer: str) -> dict:

@@ -2,8 +2,8 @@ import pandas as pd
 from datasets import load_dataset
 from ollama import Client
 
-from get_logprobs import generate_logprobs, get_confidence_from_logprobs
 from prompts.system_prompt import SYSTEM_PROMPT
+from src.get_logprobs import generate_logprobs, get_confidence_from_logprobs
 
 MAX_TOKENS = 50
 USED_MODEL = "gemma3:1b"
@@ -36,7 +36,8 @@ def measure_perceived_confidence(question: str, answer: str):
     )
 
     try:
-        return float(response.get("response", "").strip())
+        content = response["message"]["content"].strip()
+        return float(content)
     except:
         return 50.0
 
@@ -102,6 +103,7 @@ def send_prompt(
             "question": question,
             "initial_answer": initial_answer,
             "initial_perceived_confidence": initial_perceived_confidence,
+            "actual_confidence": confidence_answer,
             "rephrased_answer": rephrased_answer,
             "rephrased_perceived_confidence": rephrased_perceived_confidence,
         }
