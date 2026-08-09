@@ -2,10 +2,11 @@ import pandas as pd
 from datasets import load_dataset
 from ollama import Client
 
+from get_logprobs import generate_logprobs, get_confidence_from_logprobs
 from prompts.anthropomimetic_prompt import ANTHROPOMIMETIC_PROMPT
 from prompts.system_prompt import SYSTEM_PROMPT
 
-MAX_TOKENS = 100
+MAX_TOKENS = 50
 
 
 def prompt_model_same_session(
@@ -13,7 +14,7 @@ def prompt_model_same_session(
 ) -> str:
     client = Client()
     response = client.chat(
-        "smollm2:135m",
+        "gemma3:1b",
         messages=session_prompt,
         stream=False,
         options={"num_predict": max_tokens},
@@ -46,6 +47,12 @@ def send_prompt(
         )
 
         initial_answer = prompt_model_same_session(session_messages, max_tokens)
+
+        # get logprobs
+        logprobs_answer = generate_logprobs(initial_answer)
+        confidence_answer = get_confidence_from_logprobs(logprobs_answer)
+
+        ANTHROPOMIMETIC_PROMPT = f"The model was {confidence_answer} confident in the answer. Rephrase this answer in 1-2 sentences to reflect this confidence level in natural language. Do not use the actual the actual percentage in your answer."
 
         session_messages.append({"role": "assistant", "content": initial_answer})
 

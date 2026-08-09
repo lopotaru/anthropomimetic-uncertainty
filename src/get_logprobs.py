@@ -1,5 +1,6 @@
 from typing import Iterable
 
+import numpy as np
 import ollama
 import pandas as pd
 from ollama import Client
@@ -22,7 +23,7 @@ def generate_logprobs(answer: str) -> dict:
     client = Client()
 
     response = ollama.generate(
-        model="smollm2:135m",
+        model="gemma3:1b",
         prompt=answer,
         logprobs=True,
         top_logprobs=3,
@@ -103,6 +104,25 @@ def save_logprobs(input_file: str, output_file: str, batch_size: int):
             get_logprobs_in_batches(batch, True, output_file)
         else:
             get_logprobs_in_batches(batch, False, output_file)
+
+
+def get_confidence_from_logprobs(logprobs: list[dict]) -> float:
+    logprobs_array = np.array([logprob.get("logprob", 0) for logprob in logprobs])
+    probabilities = np.exp(logprobs_array)
+    normalised_probabilities = probabilities / np.sum(probabilities)
+    entropy = (-1) * np.sum(
+        normalised_probabilities * np.log(normalised_probabilities + 0.00001)
+    )
+    max_entropy = np.log(len(entropy))
+
+    if max_entropy > 0:
+        normalised_entropy = float(entropy / max_entropy)
+    else:
+        normalised_entropy = 0.0
+
+    confidence = (1.0 - normalised_entropy) * 100
+
+    return confidence
 
 
 if __name__ == "__main__":
