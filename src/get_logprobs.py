@@ -5,7 +5,25 @@ import ollama
 import pandas as pd
 from ollama import Client
 
-USED_MODEL = "gemma3:1b"
+USED_MODEL = "smollm:135m"
+# "gemma3:1b"
+MAX_TOKENS = 50
+
+
+def calculate_average_logprobs(response):
+    logprobs = response.get("logprobs", [])
+    if logprobs:
+        return np.mean([logprob.get("logprob", -np.inf) for logprob in logprobs])
+    else:
+        return -np.inf
+
+
+def calculate_total_logprobs(response):
+    logprobs = response.get("logprobs", [])
+    if logprobs:
+        return np.sum([logprob.get("logprob", 0) for logprob in logprobs])
+    else:
+        return 0.0
 
 
 def generate_logprobs(answer: str) -> dict:
@@ -72,6 +90,34 @@ def get_logprobs_in_batches(batch: list, first_batch: bool, output_file: str):
         data.to_csv(output_file, mode="a", header=False, index=False)
 
 
+def get_answer_and_logprobs(question: str, session_message: list[dict]) -> dict:
+    client = Client()
+
+    if session_message:
+        messages = session_message
+    else:
+        messages = [
+            {"role": "user", "content": f"Answer the following question: {question}"}
+        ]
+
+    response = client.chat(
+        USED_MODEL,
+        messages=messages,
+        stream=False,
+        logprobs=True,
+        top_logprobs=3,
+        options={"num_predict": MAX_TOKENS},
+    )
+
+    return {
+        "answer": response.get("response", ""),
+        "logprobs": response.get("logprobs", []),
+        "avg_logprobs": calculate_average_logprobs(response),
+        "total_logprobs": calculate_total_logprobs(response),
+        "num_tokens": len(response.get("logprobs", [])),
+    }
+
+
 def save_logprobs(input_file: str, output_file: str, batch_size: int):
     input_data = pd.read_csv(input_file)
     batch = []
@@ -103,7 +149,7 @@ def get_confidence_from_logprobs(logprobs: list[dict]) -> float:
     averaged_probabilities = np.mean(probabilities)
     confidence = averaged_probabilities * 100
 
-    return min(confidence, 100)
+    return min(confidence, 100.00)
 
 
 if __name__ == "__main__":

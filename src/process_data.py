@@ -3,10 +3,15 @@ from datasets import load_dataset
 from ollama import Client
 
 from prompts.system_prompt import SYSTEM_PROMPT
-from src.get_logprobs import generate_logprobs, get_confidence_from_logprobs
+from src.get_logprobs import (
+    generate_logprobs,
+    get_answer_and_logprobs,
+    get_confidence_from_logprobs,
+)
 
 MAX_TOKENS = 50
-USED_MODEL = "gemma3:1b"
+USED_MODEL = "smollm:135m"
+# "gemma3:1b"
 
 
 def prompt_model_same_session(
@@ -27,8 +32,7 @@ def measure_perceived_confidence(question: str, answer: str):
     client = Client()
     prompt = f""" 
     How confident is the phrasing of the utterance below. Give your answer as 
-    a percentage on a scale from 0% to 100% enclosed inside the tag 
-    <confidence_of_utterance>XXX<confidence_of_utterance>.
+    a percentage on a scale from 0% to 100%.
 
     Utterance: {answer}
     """
@@ -41,7 +45,7 @@ def measure_perceived_confidence(question: str, answer: str):
         content = response["message"]["content"].strip()
         return float(content)
     except:
-        return 50.0
+        return None
 
 
 def send_prompt(
@@ -67,19 +71,17 @@ def send_prompt(
             {"role": "user", "content": f"Answer the following question: {question}"}
         )
 
-        initial_answer = prompt_model_same_session(session_messages, max_tokens)
+        result = get_answer_and_logprobs(question, session_messages)
+
+        initial_answer = result["answer"]
 
         # get perceived confidence for initial answer
         initial_perceived_confidence = measure_perceived_confidence(
             question, initial_answer
         )
 
-        # get logprobs
-        logprobs_dictionary = generate_logprobs(initial_answer)
-        logprobs_answer = logprobs_dictionary["logprobs_data"]
-
         # get confidence percentage
-        confidence_answer = get_confidence_from_logprobs(logprobs_answer)
+        confidence_answer = get_confidence_from_logprobs(result["logprobs"])
 
         ANTHROPOMIMETIC_PROMPT = f"""
         Rephrase this answer in 1-2 sentences to reflect the confidence level of 
