@@ -25,11 +25,13 @@ def prompt_model_same_session(
 
 def measure_perceived_confidence(question: str, answer: str):
     client = Client()
-    prompt = f""" Question: {question}
-    Answer: {answer}
+    prompt = f""" 
+    How confident is the phrasing of the utterance below. Give your answer as 
+    a percentage on a scale from 0% to 100% enclosed inside the tag 
+    <confidence_of_utterance>XXX<confidence_of_utterance>.
 
-    Based on the used language, what confidence level does this answer express (0 - 100)?
-    Respond with only a number."""
+    Utterance: {answer}
+    """
 
     response = client.chat(
         USED_MODEL, messages=[{"role": "user", "content": prompt}], stream=False
@@ -80,10 +82,9 @@ def send_prompt(
         confidence_answer = get_confidence_from_logprobs(logprobs_answer)
 
         ANTHROPOMIMETIC_PROMPT = f"""
-        The model was {confidence_answer} confident in the answer. 
-        Rephrase this answer in 1-2 sentences to reflect this confidence level 
-        in natural language. Do not use the actual the actual percentage in 
-        your answer."""
+        Rephrase this answer in 1-2 sentences to reflect the confidence level of 
+        {confidence_answer} in natural language.  
+        """
 
         session_messages.append({"role": "assistant", "content": initial_answer})
 
