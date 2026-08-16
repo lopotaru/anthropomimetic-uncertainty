@@ -97,22 +97,13 @@ def save_logprobs(input_file: str, output_file: str, batch_size: int):
 
 
 def get_confidence_from_logprobs(logprobs: list[dict]) -> float:
-    logprobs_array = np.array([logprob.get("logprob", 0) for logprob in logprobs])
-    probabilities = np.exp(logprobs_array)
-    normalised_probabilities = probabilities / np.sum(probabilities)
-    entropy = (-1) * np.sum(
-        normalised_probabilities * np.log(normalised_probabilities + 0.00001)
-    )
-    max_entropy = np.log(len(normalised_probabilities))
+    logprobs_array = np.array([logprob.get("logprob", -np.inf) for logprob in logprobs])
+    scaled_logporbs = np.clip(logprobs_array, -100, 0)
+    probabilities = np.exp(scaled_logporbs)
+    averaged_probabilities = np.mean(probabilities)
+    confidence = averaged_probabilities * 100
 
-    if max_entropy > 0:
-        normalised_entropy = float(entropy / max_entropy)
-    else:
-        normalised_entropy = 0.0
-
-    confidence = (1.0 - normalised_entropy) * 100
-
-    return confidence
+    return min(confidence, 100)
 
 
 if __name__ == "__main__":
