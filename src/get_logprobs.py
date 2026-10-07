@@ -5,7 +5,7 @@ import ollama
 import pandas as pd
 from ollama import Client
 
-USED_MODEL = "gemma3:1b"
+USED_MODEL = "qwen3:32b"
 # "smollm:135m"
 # "gemma3:1b"
 MAX_TOKENS = 50
