@@ -5,10 +5,10 @@ import ollama
 import pandas as pd
 from ollama import Client
 
-USED_MODEL = "qwen3:32b"
+USED_MODEL = "gemma3:27b"
 # "smollm:135m"
 # "gemma3:1b"
-MAX_TOKENS = 50
+MAX_TOKENS = 512
 
 
 def calculate_average_logprobs(response):

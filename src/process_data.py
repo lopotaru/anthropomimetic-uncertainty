@@ -10,7 +10,7 @@ from src.get_logprobs import (
 )
 
 MAX_TOKENS = 512
-USED_MODEL = "qwen3:32b"
+USED_MODEL = "gemma3:27b"
 # "smollm:135m"
 # "gemma3:1b"
 
