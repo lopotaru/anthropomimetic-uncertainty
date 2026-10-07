@@ -10,7 +10,7 @@ from src.get_logprobs import (
 )
 
 MAX_TOKENS = 512
-USED_MODEL = "gemma3:27b"
+USED_MODEL = "qwen3:32b"
 # "smollm:135m"
 # "gemma3:1b"
 
@@ -29,7 +29,7 @@ def prompt_model_same_session(
     return response["message"]["content"]
 
 
-def measure_perceived_confidence(answer: str):
+def measure_perceived_confidence(question: str, answer: str):
     client = Client()
     prompt = f""" 
     How confident is the phrasing of the utterance below. Give your answer as 
