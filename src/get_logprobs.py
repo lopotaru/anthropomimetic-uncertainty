@@ -5,6 +5,8 @@ import ollama
 import pandas as pd
 from ollama import Client
 
+from src.structured_output import AnswerOutput
+
 USED_MODEL = "gemma3:27b"
 # "smollm:135m"
 # "gemma3:1b"
@@ -101,22 +103,31 @@ def get_answer_and_logprobs(question: str, session_message: list[dict]) -> dict:
             {"role": "user", "content": f"Answer the following question: {question}"}
         ]
 
-    response = client.chat(
-        USED_MODEL,
-        messages=messages,
-        stream=False,
-        logprobs=True,
-        top_logprobs=3,
-        options={"num_predict": MAX_TOKENS},
-    )
+    try:
+        response = client.chat(
+            USED_MODEL,
+            messages=messages,
+            format=AnswerOutput.model_json_schema(),
+            stream=False,
+            logprobs=True,
+            top_logprobs=3,
+            options={"num_predict": MAX_TOKENS},
+        )
 
-    return {
-        "answer": response.get("response", ""),
-        "logprobs": response.get("logprobs", []),
-        "avg_logprobs": calculate_average_logprobs(response),
-        "total_logprobs": calculate_total_logprobs(response),
-        "num_tokens": len(response.get("logprobs", [])),
-    }
+        answer_output = AnswerOutput.model_validate_json(response["message"]["content"])
+
+        return {
+            # "answer": response.get("response", ""),
+            "answer": answer_output.answer,
+            "logprobs": response.get("logprobs", []),
+            "avg_logprobs": calculate_average_logprobs(response),
+            "total_logprobs": calculate_total_logprobs(response),
+            "num_tokens": len(response.get("logprobs", [])),
+        }
+
+    except Exception as e:
+        print(f"Failed when retrieving logprobs for question {question}.")
+        return None
 
 
 def save_logprobs(input_file: str, output_file: str, batch_size: int):

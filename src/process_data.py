@@ -4,10 +4,10 @@ from ollama import Client
 
 from prompts.system_prompt import SYSTEM_PROMPT
 from src.get_logprobs import (
-    generate_logprobs,
     get_answer_and_logprobs,
     get_confidence_from_logprobs,
 )
+from src.structured_output import RephrasedOutput
 
 MAX_TOKENS = 512
 USED_MODEL = "gemma3:27b"
@@ -15,37 +15,50 @@ USED_MODEL = "gemma3:27b"
 # "gemma3:1b"
 
 
-def prompt_model_same_session(
-    session_prompt: list[dict], max_tokens: int = MAX_TOKENS
-) -> str:
-    client = Client()
-    response = client.chat(
-        USED_MODEL,
-        messages=session_prompt,
-        stream=False,
-        options={"num_predict": max_tokens},
-        think=False,
-    )
-    return response["message"]["content"]
-
-
 def measure_perceived_confidence(question: str, answer: str):
     client = Client()
     prompt = f""" 
     How confident is the phrasing of the utterance below. Give your answer as 
-    a percentage on a scale from 0% to 100%.
-
-    Utterance: {answer}
+    a percentage (0-100%). Utterance: {answer}
     """
 
-    response = client.chat(
-        USED_MODEL, messages=[{"role": "user", "content": prompt}], stream=False
-    )
+    try:
+        response = client.chat(
+            USED_MODEL, messages=[{"role": "user", "content": prompt}], stream=False
+        )
+
+        return response["message"]["content"].strip()
+
+    except Exception as e:
+        print(f"Could not measure perceived confidence for '{question}'. ")
+        return None
+
+
+def get_rephrased_answer(
+    initial_answer: str, confidence: float, max_tokens: int = MAX_TOKENS
+) -> RephrasedOutput | None:
+    client = Client()
+
+    ANTHROPOMIMETIC_PROMPT = f"""Rephrase this utterance {initial_answer} to reflect the confidence level of 
+            {confidence} in natural language."""
 
     try:
-        content = response["message"]["content"].strip()
-        return content
-    except:
+        client = Client()
+        response = client.chat(
+            USED_MODEL,
+            messages=ANTHROPOMIMETIC_PROMPT,
+            stream=False,
+            format=RephrasedOutput.model_json_schema(),
+            options={"num_predict": max_tokens},
+        )
+
+        rephrased_answer = RephrasedOutput.model_validate_json(
+            response["message"]["content"]
+        )
+        return rephrased_answer
+
+    except Exception as e:
+        print(f"Error rephrasing answer for utterance '{initial_answer}'. ")
         return None
 
 
@@ -84,22 +97,13 @@ def send_prompt(
         # get confidence percentage
         confidence_answer = get_confidence_from_logprobs(result["logprobs"])
 
-        ANTHROPOMIMETIC_PROMPT = f"""
-        Rephrase this answer in 1-2 sentences to reflect the confidence level of 
-        {confidence_answer} in natural language.  
-        """
-
-        session_messages.append({"role": "assistant", "content": initial_answer})
-
-        # anthropomimetic prompting
-        session_messages.append({"role": "user", "content": ANTHROPOMIMETIC_PROMPT})
-
-        # ask to rephrase question based on confidence
-        rephrased_answer = prompt_model_same_session(session_messages, max_tokens)
+        rephrased_answer = get_rephrased_answer(
+            initial_answer, confidence_answer, MAX_TOKENS
+        )
 
         # get perceived confidence for rephrased answer
         rephrased_perceived_confidence = measure_perceived_confidence(
-            question, rephrased_answer
+            question, rephrased_answer.answer
         )
 
         question_result = {
