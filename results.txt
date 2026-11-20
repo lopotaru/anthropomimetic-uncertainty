@@ -1,0 +1,18 @@
+```analyse_results.py```
+
+MAE initial:   7.0018
+MAE rephrased: 6.7721
+Paired t-test: t = -12.759, p = 1.626e-37
+Wilcoxon (one-sided): p = 6.637e-56
+Median change: 0.000
+Exact zeros: 34433 of 42926
+Share with identical perceived confidence: 80.2%
+
+```cliped_data_analysis.py```
+Kept 42563 of 42926 pairs (0.85% dropped)
+MAE initial:   6.7380
+MAE rephrased: 6.5862
+Paired t-test (one-sided): t = -12.261, p = 8.375e-35
+Wilcoxon (one-sided): p = 3.28e-47
+Median change: 0.000
+Exact zeros: 34391 of 42563
